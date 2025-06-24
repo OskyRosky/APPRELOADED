@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router, procesar_cola_mensajes
@@ -5,10 +8,10 @@ import asyncio
 
 app = FastAPI()
 
-# 👇 Este bloque es obligatorio
+# ✅ Middleware CORS configurado correctamente
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # frontend (React) local
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

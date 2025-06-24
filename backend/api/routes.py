@@ -1,33 +1,41 @@
-from fastapi import WebSocket, WebSocketDisconnect, APIRouter
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter, Request
 from typing import List
-from pydantic import BaseModel
 import subprocess
 import threading
 import os
+import asyncio
+from notifier import cola_mensajes, enviar_mensaje_ws
 
 router = APIRouter()
 
 connections: List[WebSocket] = []
 
-class DownloadRequest(BaseModel):
-    url: str
-
 @router.get("/")
 def home():
     return {"message": "SIGED Reloaded Backend is running 🚀"}
 
+# ✅ Permitir solicitudes OPTIONS para evitar CORS 400
+@router.options("/descargar")
+def options_descargar():
+    return {}
+
+# ✅ Usamos Request plano (no Pydantic) para evitar error con OPTIONS
 @router.post("/descargar")
-def iniciar_descarga(data: DownloadRequest):
-    print(f"🔗 Iniciando descarga para: {data.url}")
+async def iniciar_descarga(request: Request):
+    body = await request.json()
+    url = body.get("url")
+    ruta = body.get("ruta")
+
+    print(f"🔗 Iniciando descarga para: {url}")
+    print(f"📁 Ruta de descarga: {ruta}")
 
     def run():
         script_path = os.path.join(os.path.dirname(__file__), "..", "downloader.py")
-        download_path = "/Users/sultan/Downloads/testdescarga"  # Ruta fija de destino
-        subprocess.run(["python3", script_path, data.url, download_path])
+        subprocess.run(["python3", script_path, url, ruta])
 
     threading.Thread(target=run).start()
 
-    return {"status": "Descarga iniciada", "url": data.url}
+    return {"status": "Descarga iniciada", "url": url}
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -45,9 +53,6 @@ async def enviar_a_todos(mensaje: str):
             await conn.send_text(mensaje)
         except Exception:
             pass
-
-import asyncio
-from notifier import cola_mensajes, enviar_mensaje_ws
 
 async def procesar_cola_mensajes():
     while True:

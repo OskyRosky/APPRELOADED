@@ -3,6 +3,7 @@ import './App.css';
 
 function App() {
   const [url, setUrl] = useState('');
+  const [ruta, setRuta] = useState('/Users/sultan/Downloads/testdescarga');
   const [progress, setProgress] = useState(0);
   const [mensaje, setMensaje] = useState('');
   const [mensajes, setMensajes] = useState([]);
@@ -16,7 +17,7 @@ function App() {
     };
 
     socket.onmessage = (event) => {
-      setMensajes(prev => [...prev, event.data]);
+      setMensajes((prev) => [...prev, event.data]);
     };
 
     socket.onerror = (error) => {
@@ -33,7 +34,7 @@ function App() {
 
     setProgress(0);
     setMensaje('');
-    setMensajes([]); // Limpiar mensajes antes de nueva descarga
+    setMensajes([]); // Limpiar mensajes
 
     try {
       const response = await fetch("http://127.0.0.1:8001/descargar", {
@@ -41,15 +42,23 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ url, ruta: "/Users/sultan/Downloads/testdescarga" }), // puedes reemplazar la ruta después
+        body: JSON.stringify({ url, ruta }),
+        mode: "cors", // ✅ Línea clave para evitar error CORS
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Backend error:", errorText);
+        setMensaje("❌ Ocurrió un error en la descarga");
+        return;
+      }
 
       const data = await response.json();
       setMensaje(data.status);
 
-      // Progreso simulado (opcional)
+      // Simulación de progreso visual (opcional)
       const interval = setInterval(() => {
-        setProgress(prev => {
+        setProgress((prev) => {
           if (prev >= 100) {
             clearInterval(interval);
             return 100;
@@ -59,7 +68,7 @@ function App() {
       }, 300);
     } catch (error) {
       console.error("Error en la descarga:", error);
-      setMensaje("❌ Ocurrió un error en la descarga");
+      setMensaje("❌ Error de red o conexión con el servidor");
     }
   };
 
@@ -79,8 +88,9 @@ function App() {
         <label>📁 Carpeta de destino:</label><br />
         <input 
           type="text" 
-          disabled 
-          placeholder="(Selector de carpeta no disponible aún)" 
+          value={ruta}
+          onChange={(e) => setRuta(e.target.value)}
+          placeholder="/ruta/de/descarga"
         /><br /><br />
 
         <button type="submit">Iniciar Descarga</button>
@@ -92,12 +102,20 @@ function App() {
           <div className="progress-fill" style={{ width: `${progress}%` }}></div>
         </div>
         <p>{progress}%</p>
-        <p>{mensaje}</p>
+        <p style={{ color: mensaje.includes("❌") ? "red" : "white" }}>{mensaje}</p>
       </div>
 
       <div className="log-container">
         <h3>📝 Estado de la descarga:</h3>
-        <pre style={{ whiteSpace: 'pre-wrap', backgroundColor: '#222', color: '#0f0', padding: '10px', borderRadius: '8px', maxHeight: '300px', overflowY: 'scroll' }}>
+        <pre style={{
+          whiteSpace: 'pre-wrap',
+          backgroundColor: '#222',
+          color: '#0f0',
+          padding: '10px',
+          borderRadius: '8px',
+          maxHeight: '300px',
+          overflowY: 'scroll'
+        }}>
           {mensajes.join("\n")}
         </pre>
       </div>
