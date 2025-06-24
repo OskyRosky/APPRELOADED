@@ -1,0 +1,16 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node/React
+node_modules/
+dist/
+build/
+
+# Otros archivos locales
+.DS_Store
+.env
+
+# VS Code
+.vscode/
