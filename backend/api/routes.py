@@ -28,3 +28,20 @@ def iniciar_descarga(data: DownloadRequest):
     threading.Thread(target=run).start()
 
     return {"status": "Descarga iniciada", "url": data.url}
+
+@router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    connections.append(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        connections.remove(websocket)
+
+async def enviar_a_todos(mensaje: str):
+    for conn in connections:
+        try:
+            await conn.send_text(mensaje)
+        except Exception:
+            pass
