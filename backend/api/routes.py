@@ -1,10 +1,13 @@
-from fastapi import APIRouter
+from fastapi import WebSocket, WebSocketDisconnect, APIRouter
+from typing import List
 from pydantic import BaseModel
 import subprocess
 import threading
 import os
 
 router = APIRouter()
+
+connections: List[WebSocket] = []
 
 class DownloadRequest(BaseModel):
     url: str
