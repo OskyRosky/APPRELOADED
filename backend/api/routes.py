@@ -45,3 +45,11 @@ async def enviar_a_todos(mensaje: str):
             await conn.send_text(mensaje)
         except Exception:
             pass
+
+import asyncio
+from notifier import cola_mensajes, enviar_mensaje_ws
+
+async def procesar_cola_mensajes():
+    while True:
+        mensaje = await cola_mensajes.get()
+        await enviar_a_todos(mensaje)
